@@ -10,7 +10,7 @@ import com.borscheva.spring.rest.notificationservice.repository.SmsInboxReposito
 import com.borscheva.spring.rest.notificationservice.repository.TelegramInboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -28,74 +28,86 @@ public class KafkaMessageListener {
     private final TelegramInboxRepository telegramInboxRepository;
 
     @KafkaListener(topics = "email-events", groupId = "${spring.kafka.consumer.group-id}")
-    public void handleEmail(String message) {
-        log.info("Получено email сообщение: {}", message);
+    public void handleEmail(ConsumerRecord<String, String> record) {
+        String key = record.key();
+        String message = record.value();
+
+        log.info("Получено email сообщение с key: {}, value: {}", key, message);
 
         EmailInbox inboxMessage = EmailInbox.builder()
                 .id(UUID.randomUUID())
                 .createdAt(LocalDateTime.now())
                 .topic("email-events")
-                .key(UUID.randomUUID().toString())
+                .key(key)
                 .value(message)
                 .processed(false)
                 .attempt(1)
                 .build();
 
         emailInboxRepository.save(inboxMessage);
-        log.info("Email сообщение сохранено в inbox");
+        log.info("Email сообщение сохранено в inbox с key: {}", key);
     }
 
     @KafkaListener(topics = "sms-events", groupId = "${spring.kafka.consumer.group-id}")
-    public void handleSms(String message) {
-        log.info("Получено sms сообщение: {}", message);
+    public void handleSms(ConsumerRecord<String, String> record) {
+        String key = record.key();
+        String message = record.value();
+
+        log.info("Получено sms сообщение с key: {}, value: {}", key, message);
 
         SmsInbox inboxMessage = SmsInbox.builder()
                 .id(UUID.randomUUID())
                 .createdAt(LocalDateTime.now())
                 .topic("sms-events")
-                .key(UUID.randomUUID().toString())
+                .key(key)
                 .value(message)
                 .processed(false)
                 .attempt(1)
                 .build();
 
         smsInboxRepository.save(inboxMessage);
-        log.info("SMS сообщение сохранено в inbox");
+        log.info("SMS сообщение сохранено в inbox с key: {}", key);
     }
 
     @KafkaListener(topics = "push-events", groupId = "${spring.kafka.consumer.group-id}")
-    public void handlePush(String message) {
-        log.info("Получено push сообщение: {}", message);
+    public void handlePush(ConsumerRecord<String, String> record) {
+        String key = record.key();
+        String message = record.value();
+
+        log.info("Получено push сообщение с key: {}, value: {}", key, message);
 
         PushInbox inboxMessage = PushInbox.builder()
                 .id(UUID.randomUUID())
                 .createdAt(LocalDateTime.now())
                 .topic("push-events")
-                .key(UUID.randomUUID().toString())
+                .key(key)
                 .value(message)
                 .processed(false)
                 .attempt(1)
                 .build();
 
         pushInboxRepository.save(inboxMessage);
-        log.info("Push сообщение сохранено в inbox");
+        log.info("Push сообщение сохранено в inbox с key: {}", key);
     }
 
     @KafkaListener(topics = "telegram-events", groupId = "${spring.kafka.consumer.group-id}")
-    public void handleTelegram(String message) {
-        log.info("Получено telegram сообщение: {}", message);
+    public void handleTelegram(ConsumerRecord<String, String> record) {
+        String key = record.key();
+        String message = record.value();
+
+        log.info("Получено telegram сообщение с key: {}, value: {}", key, message);
 
         TelegramInbox inboxMessage = TelegramInbox.builder()
                 .id(UUID.randomUUID())
                 .createdAt(LocalDateTime.now())
                 .topic("telegram-events")
-                .key(UUID.randomUUID().toString())
+                .key(key)
                 .value(message)
                 .processed(false)
                 .attempt(1)
                 .build();
 
         telegramInboxRepository.save(inboxMessage);
-        log.info("Telegram сообщение сохранено в inbox");
+        log.info("Telegram сообщение сохранено в inbox с key: {}", key);
     }
 }

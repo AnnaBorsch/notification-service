@@ -1,17 +1,23 @@
 package com.borscheva.spring.rest.notificationservice.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Configuration
 public class KafkaConsumerConfig {
 
@@ -41,7 +47,24 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(consumerFactory());
-        factory.setBatchListener(true);
+        factory.setBatchListener(false);
+        factory.setCommonErrorHandler(errorHandler());
+
         return factory;
+    }
+
+    @Bean
+    public CommonErrorHandler errorHandler() {
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+                (record, exception) -> {
+                    log.warn("Сообщение с key: {} и value: {} окончательно не обработано. Ошибка: {}",
+                            record.key(), record.value(), exception.getMessage());
+                },
+                new FixedBackOff(0, 0)
+        );
+
+        errorHandler.addNotRetryableExceptions(DataIntegrityViolationException.class);
+
+        return errorHandler;
     }
 }
